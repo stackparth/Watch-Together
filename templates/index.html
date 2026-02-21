@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Watch Together</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        background: '#09090b',
+                        foreground: '#fafafa',
+                        card: '#09090b',
+                        'card-foreground': '#fafafa',
+                        popover: '#09090b',
+                        'popover-foreground': '#fafafa',
+                        primary: '#fafafa',
+                        'primary-foreground': '#18181b',
+                        secondary: '#27272a',
+                        'secondary-foreground': '#fafafa',
+                        muted: '#27272a',
+                        'muted-foreground': '#a1a1aa',
+                        accent: '#27272a',
+                        'accent-foreground': '#fafafa',
+                        destructive: '#7f1d1d',
+                        'destructive-foreground': '#fafafa',
+                        border: '#27272a',
+                        input: '#27272a',
+                        ring: '#d4d4d8',
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="min-h-screen flex flex-col items-center">
+    <div class="w-full border-b border-border bg-background p-4 flex justify-between items-center sticky top-0 z-40">
+        <h1 class="text-xl font-bold tracking-tight">Watch Together</h1>
+        <div id="roleBadge" class="hidden px-2.5 py-0.5 rounded-full text-xs font-semibold"></div>
+    </div>
+
+    <div class="w-full max-w-7xl grid grid-cols-1 lg:grid-cols-3 gap-6 p-6">
+        <!-- Video Section -->
+        <div class="lg:col-span-2 flex flex-col gap-6">
+            <div class="shad-card p-1">
+                <div class="aspect-video w-full bg-black rounded overflow-hidden relative" id="playerContainer">
+                    <div id="player" class="absolute inset-0 w-full h-full"></div>
+                </div>
+            </div>
+            
+            <!-- Admin Controls -->
+            <div id="adminControls" class="shad-card p-4 hidden flex flex-col gap-4">
+                <h3 class="font-semibold text-sm">Admin Controls</h3>
+                <div class="flex flex-col sm:flex-row gap-3">
+                    <input type="text" id="videoUrl" placeholder="YouTube URL or Video ID (e.g., dQw4w9WgXcQ)" class="shad-input flex-1">
+                    <button class="shad-btn w-full sm:w-auto" onclick="changeVideo()">Load Video</button>
+                </div>
+                <div class="flex gap-2">
+                    <button class="shad-btn shad-btn-secondary flex-1" onclick="playVideo()">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-2"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                        Play
+                    </button>
+                    <button class="shad-btn shad-btn-secondary flex-1" onclick="pauseVideo()">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-2"><rect width="4" height="16" x="6" y="4"></rect><rect width="4" height="16" x="14" y="4"></rect></svg>
+                        Pause
+                    </button>
+                    <button class="shad-btn shad-btn-secondary flex-1" onclick="syncVideo()">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-2"><path d="M21 2v6h-6"></path><path d="M3 12a9 9 0 1 0 2.32-5.94L2 9"></path></svg>
+                        Force Sync
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Chat Section -->
+        <div class="shad-card flex flex-col h-[calc(100vh-8rem)] lg:h-[650px]">
+            <div class="p-4 border-b border-border">
+                <h3 class="font-semibold">Live Chat <span id="roomIdDisplay" class="text-muted-foreground text-xs ml-2 font-normal"></span></h3>
+            </div>
+            <div id="chatMessages" class="flex-1 overflow-y-auto p-4 flex flex-col gap-4">
+                <!-- Messages go here -->
+            </div>
+            <div class="p-4 border-t border-border flex gap-2 bg-background/50">
+                <input type="text" id="chatInput" placeholder="Type a message..." class="shad-input flex-1 bg-background" onkeypress="handleEnter(event)">
+                <button class="shad-btn w-fit px-3" onclick="sendMessage()">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Setup Modal for initial join -->
+    <div id="setupModal" class="fixed inset-0 bg-background/90 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="shad-card p-6 w-full max-w-sm flex flex-col gap-5 shadow-2xl">
+            <div class="flex flex-col gap-1">
+                <h2 class="text-2xl font-bold tracking-tight">Join Room</h2>
+                <p class="text-sm text-muted-foreground">Enter details to start watching.</p>
+            </div>
+            <div class="flex flex-col gap-2">
+                <label class="text-sm font-medium leading-none">Your Name</label>
+                <input type="text" id="userName" class="shad-input" placeholder="e.g. Alice">
+            </div>
+            <div class="flex flex-col gap-2">
+                <label class="text-sm font-medium leading-none">Room ID</label>
+                <input type="text" id="roomIdInput" class="shad-input" placeholder="Leave empty to create new">
+            </div>
+            <div class="flex items-center space-x-2 border border-border p-3 rounded-md cursor-pointer hover:bg-muted/50 transition-colors" onclick="document.getElementById('isAdminCheck').click()">
+                <input type="checkbox" id="isAdminCheck" class="w-4 h-4 rounded border-border bg-background text-primary focus:ring-ring shrink-0">
+                <label class="text-sm font-medium leading-none cursor-pointer">I am creating the room (Admin)</label>
+            </div>
+            <button class="shad-btn mt-2 w-full" onclick="joinRoom()">Enter Room</button>
+        </div>
+    </div>
+
+    <script src="https://www.youtube.com/iframe_api"></script>
+    <script src="/static/js/app.js"></script>
+</body>
+</html>
