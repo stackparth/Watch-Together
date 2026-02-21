@@ -45,10 +45,15 @@ async def get_state(room_id: str, username: str = "", is_admin: str = "false"):
         for msg in history
     ]
 
+    adjusted_time = float(room.get("current_time", 0.0))
+    if room.get("state") == "playing" and room.get("updated_at"):
+        elapsed = datetime.utcnow().timestamp() - float(room.get("updated_at"))
+        adjusted_time += elapsed
+
     return {
         "video_id": room["video_id"],
         "history": formatted_history,
-        "current_time": room["current_time"],
+        "current_time": adjusted_time,
         "state": room["state"],
         "action": room.get("action", "sync")
     }
@@ -72,6 +77,8 @@ async def post_action(room_id: str, payload: ActionPayload):
         if payload.state:
             update_data["state"] = payload.state
             
+    update_data["updated_at"] = datetime.utcnow().timestamp()
+    
     await db.rooms.update_one({"room_id": room_id}, {"$set": update_data})
     return {"status": "success"}
 
